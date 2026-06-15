@@ -1,64 +1,68 @@
 <template>
   <div class="container">
-    <div v-if="isRecording" class="timer">
-      00:{{ remainingTime.toString().padStart(2, '0') }}
-    </div>
+    
+    <div v-if="!uploadFinalizado" style="display: flex; flex-direction: column; align-items: center; gap: 40px; width: 100%;">
+      
+      <div v-if="isRecording" class="timer">
+        00:{{ remainingTime.toString().padStart(2, '0') }}
+      </div>
 
-    <input
-      v-model="audioName"
-      class="name-input"
-      maxlength="30"
-      placeholder="Digite seu nome"
-      :disabled="isUploading"
-    />
+      <input
+        v-model="audioName"
+        class="name-input"
+        maxlength="30"
+        placeholder="Digite seu nome"
+        :disabled="isUploading"
+      />
 
-    <div v-if="isUploading" style="color: white; font-family: monospace;">
-      Enviando para seu amor......ou qualquer aleatório que queira ouvir.
-    </div>
+      <div v-if="isUploading" style="color: white; font-family: monospace;">
+        Enviando para seu amor......ou qualquer aleatório que queira ouvir.
+      </div>
 
-    <button
-      v-if="!isRecording && !isUploading"
-      class="heart-btn record-btn"
-      @click="startRecording"
-    >
-      <div class="heart-wrapper">
+      <button
+        v-if="!isRecording && !isUploading"
+        class="heart-btn record-btn"
+        @click="startRecording"
+      >
+        <div class="heart-wrapper">
+          <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
+            <path
+              class="heart-glow"
+              d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
+              transform="scale(1.18) translate(-16, -12)"
+            />
+            <path
+              class="heart-path"
+              d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
+            />
+          </svg>
+          <Mic class="heart-icon" :size="52" />
+        </div>
+      </button>
+
+      <button
+        v-else-if="isRecording"
+        class="heart-btn stop-btn"
+        @click="stopRecording"
+      >
         <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
           <path
-            class="heart-glow"
-            d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
-            transform="scale(1.18) translate(-16, -12)"
-          />
-          <path
-            class="heart-path"
+            class="heart-path-stop"
             d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
           />
         </svg>
-        <Mic class="heart-icon" :size="52" />
-      </div>
-    </button>
+        <Square class="heart-icon heart-icon-stop" :size="40" />
+      </button>
 
-    <button
-      v-else-if="isRecording"
-      class="heart-btn stop-btn"
-      @click="stopRecording"
-    >
-      <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
-        <path
-          class="heart-path-stop"
-          d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
-        />
-      </svg>
-      <Square class="heart-icon heart-icon-stop" :size="40" />
-    </button>
+      <audio
+        v-if="audioUrl && !isUploading"
+        :src="audioUrl"
+        controls
+        class="audio-player"
+      />
+    </div>
 
-    <audio
-      v-if="audioUrl && !isUploading"
-      :src="audioUrl"
-      controls
-      class="audio-player"
-    />
-  </div>
-  <div v-else style="color: white; text-align: center; font-family: monospace;">
+    <div v-else style="color: white; text-align: center; font-family: monospace;">
       <h2 style="font-size: 2rem; margin-bottom: 20px;">Mensagem Guardada! 📍</h2>
       <p>Vá até o local abaixo para encontrar o áudio:</p>
       
@@ -86,13 +90,13 @@
     </div>
 
   </div>
-  
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
+
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
 
@@ -220,7 +224,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 40px;
+  /* Retiramos o gap: 40px daqui e colocamos no wrapper da tela 1 para não afetar a tela 2 */
 }
 
 .timer {
