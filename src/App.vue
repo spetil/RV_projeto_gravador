@@ -58,6 +58,35 @@
       class="audio-player"
     />
   </div>
+  <div v-else style="color: white; text-align: center; font-family: monospace;">
+      <h2 style="font-size: 2rem; margin-bottom: 20px;">Mensagem Guardada! 📍</h2>
+      <p>Vá até o local abaixo para encontrar o áudio:</p>
+      
+      <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin: 20px 0;">
+        <p><strong>Latitude:</strong> -4.979991</p>
+        <p><strong>Longitude:</strong> -39.055938</p>
+      </div>
+
+      <a 
+        href="https://www.google.com/maps/dir/?api=1&destination=-4.979991,-39.055938" 
+        target="_blank"
+        style="display: block; color: #ff2d55; text-decoration: underline; margin-bottom: 40px; font-size: 1.2rem;"
+      >
+        🗺️ Abrir no Google Maps
+      </a>
+
+      <p>Quando chegar no local, abra a câmera:</p>
+      
+      <a 
+        href="./ar.html" 
+        style="background: #ff2d55; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-top: 10px; font-size: 1.2rem;"
+      >
+        📷 Abrir Realidade Aumentada
+      </a>
+    </div>
+
+  </div>
+  
 </template>
 
 <script setup>
@@ -75,6 +104,8 @@ const audioUrl = ref(null)
 
 const maxDuration = 15
 const remainingTime = ref(maxDuration)
+
+const uploadFinalizado = ref(false);
 
 let mediaRecorder
 let chunks = []
@@ -158,6 +189,7 @@ const uploadAudio = async (audioBlob) => {
     alert('Erro ao enviar o áudio. Verifique as configurações do Supabase.')
   } finally {
     isUploading.value = false
+    uploadFinalizado.value = true;
   }
 }
 </script>
