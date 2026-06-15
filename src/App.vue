@@ -1,6 +1,17 @@
 <template>
   <div class="container">
-    
+    <div v-if="showWelcome" class="popup-overlay">
+      <div class="popup-content">
+        <h2 style="font-size: 1.8rem; margin-bottom: 15px; color: #ff2d55;">Bem-vindo! 🎙️</h2>
+        <p style="margin-bottom: 15px; font-size: 1.1rem; line-height: 1.5;">
+          Este é um projeto de Realidade Aumentada. Grave um áudio e ele ficará guardado nas coordenadas exatas deste local.
+        </p>
+        <p style="margin-bottom: 25px; color: #ccc;">
+          Qualquer pessoa que vier até aqui poderá usar a câmera para ver objetos virtuais e ouvir as mensagens!
+        </p>
+        <button @click="showWelcome = false" class="btn-start">Começar</button>
+      </div>
+    </div>
     <div v-if="!uploadFinalizado" style="display: flex; flex-direction: column; align-items: center; gap: 40px; width: 100%;">
       
       <div v-if="isRecording" class="timer">
@@ -111,6 +122,8 @@ const remainingTime = ref(maxDuration)
 
 const uploadFinalizado = ref(false);
 
+const showWelcome = ref(true); // Controla o Pop-up
+  
 let mediaRecorder
 let chunks = []
 let countdownInterval
@@ -309,6 +322,42 @@ body {
   opacity: 0.3;
   animation: heartPulse 1.5s ease-in-out infinite;
 }
+
+.popup-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.85); /* Fundo escuro transparente */
+  z-index: 9999; /* Fica por cima de tudo */
+  display: flex; justify-content: center; align-items: center;
+  padding: 20px;
+}
+
+.popup-content {
+  background: #111;
+  border: 2px solid #ff2d55;
+  border-radius: 15px;
+  padding: 30px;
+  text-align: center;
+  color: white;
+  max-width: 400px;
+  font-family: monospace;
+  box-shadow: 0 0 20px rgba(255, 45, 85, 0.3);
+}
+
+.btn-start {
+  background: #ff2d55;
+  color: white;
+  border: none;
+  padding: 12px 30px;
+  font-size: 1.2rem;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+.btn-start:hover {
+  transform: scale(1.05);
+}  
 @keyframes heartPulse {
   0%   { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
   50%  { opacity: 0.55; transform: scale(1.22) translate(-18px, -14px); }
