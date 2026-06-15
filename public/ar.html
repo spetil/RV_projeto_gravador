@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!--<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -14,3 +14,117 @@
     </a-scene>
   </body>
 </html>
+versão de aula para teste incial
+-->
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Experiência de RA com Áudio</title>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script type='text/javascript' src='https://raw.githack.com/AR-js-org/AR.js/3.4.7/three.js/build/ar-threex-location-only.js'></script>
+    <script type='text/javascript' src='https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar.js'></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+      .ui-container {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        text-align: center;
+        width: 100%;
+      }
+      #play-btn {
+        background-color: #ff2d55;
+        color: white;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-family: monospace;
+        font-weight: bold;
+        cursor: pointer;
+        display: none; /* Fica escondido até o áudio carregar do banco */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      }
+    </style>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    
+    <div class="ui-container">
+      <button id="play-btn">Carregando voz... ⏳</button>
+    </div>
+
+    <a-scene vr-mode-ui='enabled: false' arjs='sourceType: webcam; videoTexture: true; debugUIEnabled: false' renderer='antialias: true; alpha: true'>
+      
+      <a-assets>
+        <a-asset-item id="meu-modelo3d" src="vintage radio.glb"></a-asset-item>
+      </a-assets>
+
+      <a-camera gps-new-camera='gpsMinDistance: 5'></a-camera>
+      
+      <a-entity 
+        gltf-model="#meu-modelo3d"
+        gps-new-entity-place="latitude: -4.466123; longitude: -38.900740" 
+        scale="2 2 2"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear"
+      ></a-entity>
+      
+    </a-scene>
+
+    <script>
+      // 1. Conectar ao seu Supabase (as mesmas chaves do App.vue)
+      const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co';
+      const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv';
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      let audioPlayer = new Audio();
+      const playBtn = document.getElementById('play-btn');
+      
+      // Mostra o botão carregando assim que entra
+      playBtn.style.display = 'inline-block';
+
+      async function carregarAudioAleatorio() {
+        try {
+          // Busca todos os audios na tabela mensagens
+          const { data, error } = await supabase.from('mensagens').select('audio_url');
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            // Sorteia um áudio aleatório da lista
+            const audioSorteado = data[Math.floor(Math.random() * data.length)];
+            audioPlayer.src = audioSorteado.audio_url;
+            
+            // Quando o áudio estiver pronto, altera o botão
+            audioPlayer.oncanplaythrough = () => {
+              playBtn.innerText = '🔊 Ouvir Mensagem Aleatória';
+            };
+          } else {
+            playBtn.innerText = 'Nenhuma mensagem encontrada';
+          }
+        } catch (error) {
+          console.error("Erro ao buscar áudio:", error);
+          playBtn.innerText = 'Erro de conexão ❌';
+        }
+      }
+
+      // Função de Play/Pause ao clicar no botão
+      playBtn.addEventListener('click', () => {
+        if(audioPlayer.paused) {
+          audioPlayer.play();
+          playBtn.innerText = '⏸️ Pausar Áudio';
+        } else {
+          audioPlayer.pause();
+          playBtn.innerText = '🔊 Ouvir Mensagem Aleatória';
+        }
+      });
+
+      // Chama a função assim que a página carrega
+      carregarAudioAleatorio();
+    </script>
+  </body>
+</html>
+
