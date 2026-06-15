@@ -4,7 +4,7 @@
       <div class="popup-content">
         <h2 style="font-size: 1.8rem; margin-bottom: 15px; color: #ff2d55;">Bem-vindo! 🎙️</h2>
         <p style="margin-bottom: 15px; font-size: 1.1rem; line-height: 1.5;">
-          Este é um projeto de Realidade Aumentada. Grave um áudio e ele ficará guardado nas coordenadas exatas deste local.
+          Este é um projeto da diciplina de Realidade Aumentada. Grave um áudio e ele ficará guardado nas coordenadas exatas deste local assim como na época onde um homem tinha um microfone em casa e um alto falante na praça onde ele falava noticias,fofocas e outras coisas.
         </p>
         <p style="margin-bottom: 25px; color: #ccc;">
           Qualquer pessoa que vier até aqui poderá usar a câmera para ver objetos virtuais e ouvir as mensagens!
