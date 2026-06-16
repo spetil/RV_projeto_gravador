@@ -72,17 +72,15 @@ versão de aula para teste incial
         <a-asset-item id="meu-modelo3d" src="vintage radio.glb"></a-asset-item>
       </a-assets>
 
-      <a-camera id="camera" gps-new-camera='gpsMinDistance: 5'></a-camera>
+      <a-camera gps-new-camera='gpsMinDistance: 5'></a-camera>
 
       <a-box
-        id="cubo"
         color="red"
         gps-new-entity-place="latitude: -4.466122627460742; longitude: -38.90073652916311"
         scale="5 5 5">
       </a-box>
 
       <a-entity
-        id="radio-model"
         gltf-model="#meu-modelo3d"
         gps-new-entity-place="latitude: -4.466122627460742; longitude: -38.90073652916311"
         scale="5 5 5"
@@ -91,17 +89,13 @@ versão de aula para teste incial
     </a-scene>
 
     <script>
-      // ── Debug panel ───────────────────────────────────────────────────
+      // ── Debug simples ─────────────────────────────────────────────────
       const debugEl = document.getElementById('debug-panel');
-      const logLines = [];
       function log(msg) {
-        logLines.unshift(msg);
-        if (logLines.length > 6) logLines.pop();
-        debugEl.innerHTML = logLines.join('<br>');
+        debugEl.innerHTML = msg;
       }
-      log('🔄 Iniciando...');
 
-      // ── Coordenadas alvo ──────────────────────────────────────────────
+      // ── GPS ───────────────────────────────────────────────────────────
       const TARGET_LAT = -4.466122627460742;
       const TARGET_LNG = -38.90073652916311;
 
@@ -114,63 +108,23 @@ versão de aula para teste incial
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       }
 
-      // ── FIX PRINCIPAL: força o GPS para o AR.js manualmente ──────────
-      // O AR.js escuta o evento 'gps-camera-update-position' no documento.
-      // Quando o watchPosition nativo dispara, emitimos esse evento manualmente
-      // para garantir que o AR.js processe a posição mesmo no Android Chrome.
-      let gpsOk = false;
-
-      function emitirGPSParaARjs(lat, lng, accuracy) {
-        // Emite o evento que o gps-new-camera espera
-        window.dispatchEvent(new CustomEvent('gps-entity-place-update-positon', {
-          detail: { position: { latitude: lat, longitude: lng } }
-        }));
-
-        // Também força via atributo direto na câmera como fallback
-        const cam = document.getElementById('camera');
-        if (cam && cam.components && cam.components['gps-new-camera']) {
-          try {
-            cam.components['gps-new-camera'].lastPosition = { latitude: lat, longitude: lng };
-            cam.components['gps-new-camera'].currentCoords = { latitude: lat, longitude: lng };
-          } catch(e) {}
-        }
+      if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+          (pos) => {
+            const dist = calcDist(
+              pos.coords.latitude, pos.coords.longitude,
+              TARGET_LAT, TARGET_LNG
+            ).toFixed(0);
+            log(`✅ GPS OK | precisão: ${pos.coords.accuracy.toFixed(0)}m | distância do ponto: ${dist}m`);
+          },
+          (err) => {
+            log(`❌ GPS erro ${err.code}: ${err.message}`);
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+        );
+      } else {
+        log('❌ GPS não suportado');
       }
-
-      navigator.geolocation.watchPosition(
-        (pos) => {
-          const { latitude, longitude, accuracy } = pos.coords;
-          const dist = calcDist(latitude, longitude, TARGET_LAT, TARGET_LNG).toFixed(0);
-          log(`✅ GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
-          log(`📍 Precisão: ${accuracy.toFixed(0)}m | Distância: ${dist}m`);
-
-          emitirGPSParaARjs(latitude, longitude, accuracy);
-
-          if (!gpsOk) {
-            gpsOk = true;
-            log('✅ GPS conectado ao AR.js');
-          }
-        },
-        (err) => {
-          const msgs = {
-            1: '❌ GPS negado — permita nas config do Chrome',
-            2: '⚠️ GPS sem sinal — vá para área aberta',
-            3: '⏱️ GPS timeout — aguarde...'
-          };
-          log(msgs[err.code] || `❌ GPS erro ${err.code}`);
-        },
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
-      );
-
-      // ── Log do modelo 3D ──────────────────────────────────────────────
-      document.querySelector('#radio-model').addEventListener('model-loaded', () => {
-        log('✅ Modelo 3D carregado');
-      });
-      document.querySelector('#radio-model').addEventListener('model-error', () => {
-        log('❌ Erro no .glb — verifique o nome do arquivo');
-      });
-      document.querySelector('a-scene').addEventListener('loaded', () => {
-        log('✅ Cena AR carregada');
-      });
 
       // ── Supabase / Áudio ──────────────────────────────────────────────
       const supabase = window.supabase.createClient(
@@ -192,13 +146,11 @@ versão de aula para teste incial
             audioPlayer.oncanplaythrough = () => {
               playBtn.innerText = '🔊 Ouvir Mensagem Aleatória';
             };
-            log(`🎵 ${data.length} áudio(s) no banco`);
           } else {
             playBtn.innerText = 'Nenhuma mensagem';
           }
         } catch (e) {
           playBtn.innerText = 'Erro ❌';
-          log('❌ Supabase: ' + e.message);
         }
       }
 
