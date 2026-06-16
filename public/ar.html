@@ -15,7 +15,7 @@
   </body>
 </html>
 versão de aula para teste incial
-
+-->
 <!DOCTYPE html>
 <html>
   <head>
@@ -56,7 +56,7 @@ versão de aula para teste incial
   </head>
   <body style="margin:0;overflow:hidden;">
 
-    <div id="debug-panel">🔄 Iniciando...</div>
+    <div id="debug-panel">🔄 Aguardando GPS...</div>
 
     <div class="ui-container">
       <button id="play-btn">Carregando voz... ⏳</button>
@@ -72,7 +72,11 @@ versão de aula para teste incial
         <a-asset-item id="meu-modelo3d" src="vintage radio.glb"></a-asset-item>
       </a-assets>
 
-      <a-camera gps-new-camera='gpsMinDistance: 5'></a-camera>
+      <!--
+        gpsMinAccuracy: aceita GPS com até 3000m de precisão (padrão era ~100m)
+        positionMinAccuracy: mesmo filtro no componente de entidade
+      -->
+      <a-camera gps-new-camera='gpsMinDistance: 5; positionMinAccuracy: 3000'></a-camera>
 
       <a-box
         color="red"
@@ -89,13 +93,9 @@ versão de aula para teste incial
     </a-scene>
 
     <script>
-      // ── Debug simples ─────────────────────────────────────────────────
       const debugEl = document.getElementById('debug-panel');
-      function log(msg) {
-        debugEl.innerHTML = msg;
-      }
+      function log(msg) { debugEl.innerHTML = msg; }
 
-      // ── GPS ───────────────────────────────────────────────────────────
       const TARGET_LAT = -4.466122627460742;
       const TARGET_LNG = -38.90073652916311;
 
@@ -108,25 +108,23 @@ versão de aula para teste incial
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       }
 
-      if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(
-          (pos) => {
-            const dist = calcDist(
-              pos.coords.latitude, pos.coords.longitude,
-              TARGET_LAT, TARGET_LNG
-            ).toFixed(0);
-            log(`✅ GPS OK | precisão: ${pos.coords.accuracy.toFixed(0)}m | distância do ponto: ${dist}m`);
-          },
-          (err) => {
-            log(`❌ GPS erro ${err.code}: ${err.message}`);
-          },
-          { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
-        );
-      } else {
-        log('❌ GPS não suportado');
-      }
+      navigator.geolocation.watchPosition(
+        (pos) => {
+          const dist = calcDist(
+            pos.coords.latitude, pos.coords.longitude,
+            TARGET_LAT, TARGET_LNG
+          ).toFixed(0);
+          const prec = pos.coords.accuracy.toFixed(0);
+          const aviso = prec > 100 ? ' ⚠️ precisão baixa' : '';
+          log(`✅ GPS OK | precisão: ${prec}m${aviso} | distância: ${dist}m`);
+        },
+        (err) => {
+          log(`❌ GPS erro ${err.code}: ${err.message}`);
+        },
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+      );
 
-      // ── Supabase / Áudio ──────────────────────────────────────────────
+      // Supabase / Áudio
       const supabase = window.supabase.createClient(
         'https://ppsdcoifaifrfgzovwwu.supabase.co',
         'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
@@ -167,56 +165,4 @@ versão de aula para teste incial
       carregarAudio();
     </script>
   </body>
-</html>
--->
-
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Teste GPS</title>
-  <style>
-    body { background: #000; color: #fff; font-family: monospace; padding: 20px; font-size: 1.1rem; }
-    #resultado { margin-top: 20px; line-height: 2; }
-    button { background: #ff2d55; color: white; border: none; padding: 14px 28px; border-radius: 50px; font-size: 1rem; cursor: pointer; margin-top: 20px; }
-  </style>
-</head>
-<body>
-  <h2>🛰️ Teste de GPS</h2>
-  <p>Toque no botão e veja se o GPS funciona neste dispositivo:</p>
-  <button onclick="testarGPS()">📍 Testar GPS agora</button>
-  <div id="resultado">Aguardando...</div>
-
-  <script>
-    function testarGPS() {
-      const el = document.getElementById('resultado');
-      el.innerHTML = '🔄 Solicitando GPS...';
-
-      if (!navigator.geolocation) {
-        el.innerHTML = '❌ GPS não suportado neste navegador.';
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          el.innerHTML =
-            '✅ GPS FUNCIONOU!<br>' +
-            '📍 Latitude: ' + pos.coords.latitude.toFixed(6) + '<br>' +
-            '📍 Longitude: ' + pos.coords.longitude.toFixed(6) + '<br>' +
-            '🎯 Precisão: ' + pos.coords.accuracy.toFixed(0) + 'm';
-        },
-        (err) => {
-          const msgs = {
-            1: '❌ PERMISSÃO NEGADA<br>Vá em: Chrome > cadeado 🔒 > Permissões > Localização > Permitir',
-            2: '⚠️ Posição indisponível (sem sinal GPS)',
-            3: '⏱️ Timeout — tente ao ar livre ou aguarde'
-          };
-          el.innerHTML = (msgs[err.code] || '❌ Erro ' + err.code) + '<br><small>' + err.message + '</small>';
-        },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-      );
-    }
-  </script>
-</body>
 </html>
