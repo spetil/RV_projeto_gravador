@@ -78,16 +78,16 @@
       <p>Vá até o local abaixo para encontrar o áudio:</p>
       
       <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin: 20px 0;">
-        <p><strong>Latitude:</strong> -4.466120</p>
-        <p><strong>Longitude:</strong> -38.900735</p>
+        <p><strong>Latitude:</strong> -4.466122</p>
+        <p><strong>Longitude:</strong> -38.900736</p>
       </div>
 
       <a 
-        href="https://maps.app.goo.gl/xtZ4kteNHKg4bqCN9" 
+        href="https://maps.google.com/?q=-4.466122627460742,-38.90073652916311" 
         target="_blank"
         style="display: block; color: #ff2d55; text-decoration: underline; margin-bottom: 40px; font-size: 1.2rem;"
       >
-        🗺️ Abrir no Google Maps
+        🗺️ Como chegar lá (Google Maps)
       </a>
 
       <p>Quando chegar no local, abra a câmera:</p>
