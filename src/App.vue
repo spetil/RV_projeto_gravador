@@ -78,12 +78,12 @@
       <p>Vá até o local abaixo para encontrar o áudio:</p>
       
       <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin: 20px 0;">
-        <p><strong>Latitude:</strong> -4.979991</p>
-        <p><strong>Longitude:</strong> -39.055938</p>
+        <p><strong>Latitude:</strong> -4.466120</p>
+        <p><strong>Longitude:</strong> -38.900735</p>
       </div>
 
       <a 
-        href="https://www.google.com/maps/dir/?api=1&destination=-4.979991,-39.055938" 
+        href="https://maps.app.goo.gl/xtZ4kteNHKg4bqCN9" 
         target="_blank"
         style="display: block; color: #ff2d55; text-decoration: underline; margin-bottom: 40px; font-size: 1.2rem;"
       >
