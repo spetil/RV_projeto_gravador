@@ -25,16 +25,43 @@ versão de aula para teste incial
     <script type='text/javascript' src='https://raw.githack.com/AR-js-org/AR.js/3.4.7/three.js/build/ar-threex-location-only.js'></script>
     <script type='text/javascript' src='https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar.js'></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
+      #debug-panel {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 9999;
+        background: rgba(0,0,0,0.82);
+        color: #fff;
+        font-family: monospace;
+        font-size: 0.82rem;
+        padding: 8px 12px;
+        line-height: 1.7;
+        pointer-events: none;
+      }
+      #gps-btn {
+        position: fixed;
+        bottom: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        background: #ff2d55;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 14px 28px;
+        font-size: 1rem;
+        font-family: monospace;
+        font-weight: bold;
+        cursor: pointer;
+        display: none;
+      }
       .ui-container {
-        position: absolute;
+        position: fixed;
         bottom: 30px;
         left: 50%;
         transform: translateX(-50%);
-        z-index: 1000;
+        z-index: 9999;
         text-align: center;
-        width: 100%;
       }
       #play-btn {
         background-color: #ff2d55;
@@ -42,31 +69,19 @@ versão de aula para teste incial
         padding: 15px 30px;
         border: none;
         border-radius: 50px;
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         font-family: monospace;
         font-weight: bold;
         cursor: pointer;
         display: none;
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
       }
-      #debug-info {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        z-index: 1000;
-        color: white;
-        background: rgba(0,0,0,0.6);
-        padding: 8px 12px;
-        border-radius: 8px;
-        font-family: monospace;
-        font-size: 0.85rem;
-        max-width: 90%;
-      }
     </style>
   </head>
-  <body style="margin: 0; overflow: hidden;">
+  <body style="margin:0;overflow:hidden;">
 
-    <div id="debug-info">📡 Aguardando GPS...</div>
+    <div id="debug-panel">🔄 Iniciando...</div>
+    <button id="gps-btn">📍 Permitir GPS e iniciar</button>
 
     <div class="ui-container">
       <button id="play-btn">Carregando voz... ⏳</button>
@@ -78,34 +93,19 @@ versão de aula para teste incial
       renderer='antialias: true; alpha: true'
       loading-screen='enabled: false'
     >
-
-      <a-assets timeout="10000">
-        <!-- 
-          IMPORTANTE: coloque o arquivo vintage radio.glb na MESMA pasta que este ar.html
-          no seu repositório do GitHub Pages.
-          Se o caminho for diferente, ajuste o src abaixo.
-        -->
+      <a-assets timeout="15000">
         <a-asset-item id="meu-modelo3d" src="vintage radio.glb"></a-asset-item>
       </a-assets>
 
-      <a-camera gps-new-camera='gpsMinDistance: 5'></a-camera>
+      <a-camera id="camera" gps-new-camera='gpsMinDistance: 5'></a-camera>
 
-      <!-- 
-        CUBO VERMELHO de referência — mais fácil de ver para confirmar que o GPS está funcionando.
-        Está 2 metros à frente da posição GPS (position="0 0 -2" não funciona com gps-new-entity-place,
-        então o offset é feito apenas pelo GPS mesmo).
-      -->
       <a-box
-        material='color: red; opacity: 0.9'
+        id="cubo"
+        color="red"
         gps-new-entity-place="latitude: -4.466122627460742; longitude: -38.90073652916311"
         scale="5 5 5">
       </a-box>
 
-      <!-- 
-        MODELO 3D — rádio vintage girando.
-        Scale em 5 (não 100) para aparecer em tamanho razoável.
-        Se não aparecer, tente aumentar para 10 ou 20.
-      -->
       <a-entity
         id="radio-model"
         gltf-model="#meu-modelo3d"
@@ -113,100 +113,129 @@ versão de aula para teste incial
         scale="5 5 5"
         animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear"
       ></a-entity>
-
     </a-scene>
 
     <script>
-      // ── Supabase ──────────────────────────────────────────────
-      const supabaseUrl  = 'https://ppsdcoifaifrfgzovwwu.supabase.co';
-      const supabaseKey  = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv';
-      const supabase     = window.supabase.createClient(supabaseUrl, supabaseKey);
+      const log = (() => {
+        const el = document.getElementById('debug-panel');
+        const lines = [];
+        return (msg) => {
+          const time = new Date().toLocaleTimeString('pt-BR');
+          lines.unshift(`[${time}] ${msg}`);
+          if (lines.length > 8) lines.pop();
+          el.innerHTML = lines.join('<br>');
+        };
+      })();
 
-      let audioPlayer    = new Audio();
-      const playBtn      = document.getElementById('play-btn');
-      const debugInfo    = document.getElementById('debug-info');
+      log('🔄 Página carregada');
 
+      // ── Permissão explícita de GPS no Android ─────────────────────────
+      // No Android Chrome, às vezes o AR.js pede a permissão tarde demais
+      // ou ela já foi negada. Pedimos antes de o A-Frame subir.
+      const gpsBtn = document.getElementById('gps-btn');
+
+      function iniciarGPS() {
+        gpsBtn.style.display = 'none';
+        log('📡 Solicitando GPS...');
+
+        navigator.geolocation.watchPosition(
+          (pos) => {
+            const { latitude, longitude, accuracy } = pos.coords;
+            const dist = calcDist(latitude, longitude,
+              -4.466122627460742, -38.90073652916311).toFixed(0);
+            log(`✅ GPS OK | precisão: ${accuracy.toFixed(0)}m | distância: ${dist}m`);
+          },
+          (err) => {
+            const msgs = {
+              1: '❌ GPS NEGADO — vá em Configurações do Chrome > Permissões do site > Localização e permita.',
+              2: '⚠️ GPS indisponível (sem sinal).',
+              3: '⏱️ GPS timeout — tente ao ar livre.'
+            };
+            log(msgs[err.code] || `❌ GPS erro ${err.code}`);
+            gpsBtn.style.display = 'block';
+            gpsBtn.innerText = '🔄 Tentar GPS novamente';
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+        );
+      }
+
+      gpsBtn.addEventListener('click', iniciarGPS);
+
+      // Tenta automático; se falhar, mostra o botão
+      if (navigator.geolocation) {
+        gpsBtn.style.display = 'block'; // mostra como fallback imediato
+        iniciarGPS();
+      } else {
+        log('❌ Este navegador não suporta GPS.');
+      }
+
+      // ── Cálculo de distância ──────────────────────────────────────────
+      function calcDist(lat1, lng1, lat2, lng2) {
+        const R = 6371000;
+        const dL = (lat2-lat1)*Math.PI/180;
+        const dG = (lng2-lng1)*Math.PI/180;
+        const a  = Math.sin(dL/2)**2 +
+                   Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dG/2)**2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
+
+      // ── Eventos do modelo 3D ──────────────────────────────────────────
+      document.querySelector('#meu-modelo3d').addEventListener('loaded', () => {
+        log('✅ Arquivo .glb carregado');
+      });
+      document.querySelector('#radio-model').addEventListener('model-loaded', () => {
+        log('✅ Modelo 3D renderizado na cena');
+      });
+      document.querySelector('#radio-model').addEventListener('model-error', () => {
+        log('❌ Erro no .glb — confira o nome do arquivo no repositório');
+      });
+
+      // ── Evento da cena A-Frame ────────────────────────────────────────
+      document.querySelector('a-scene').addEventListener('loaded', () => {
+        log('✅ Cena A-Frame carregada');
+      });
+
+      // ── Supabase / Áudio ─────────────────────────────────────────────
+      const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co';
+      const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv';
+      const supabase    = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      let audioPlayer   = new Audio();
+      const playBtn     = document.getElementById('play-btn');
       playBtn.style.display = 'inline-block';
 
-      // ── Áudio aleatório ───────────────────────────────────────
-      async function carregarAudioAleatorio() {
+      async function carregarAudio() {
         try {
           const { data, error } = await supabase.from('mensagens').select('audio_url');
           if (error) throw error;
-
           if (data && data.length > 0) {
-            const sorteado = data[Math.floor(Math.random() * data.length)];
-            audioPlayer.src = sorteado.audio_url;
+            const s = data[Math.floor(Math.random() * data.length)];
+            audioPlayer.src = s.audio_url;
             audioPlayer.oncanplaythrough = () => {
               playBtn.innerText = '🔊 Ouvir Mensagem Aleatória';
             };
+            log(`🎵 ${data.length} áudio(s) encontrado(s)`);
           } else {
-            playBtn.innerText = 'Nenhuma mensagem encontrada';
+            playBtn.innerText = 'Nenhuma mensagem';
+            log('⚠️ Nenhum áudio no banco');
           }
-        } catch (err) {
-          console.error("Erro ao buscar áudio:", err);
+        } catch (e) {
           playBtn.innerText = 'Erro de conexão ❌';
+          log('❌ Supabase: ' + e.message);
         }
       }
 
       playBtn.addEventListener('click', () => {
         if (audioPlayer.paused) {
           audioPlayer.play();
-          playBtn.innerText = '⏸️ Pausar Áudio';
+          playBtn.innerText = '⏸️ Pausar';
         } else {
           audioPlayer.pause();
           playBtn.innerText = '🔊 Ouvir Mensagem Aleatória';
         }
       });
 
-      carregarAudioAleatorio();
-
-      // ── Debug de GPS ──────────────────────────────────────────
-      // Mostra a posição atual do usuário para ajudar a depurar
-      // se o GPS está funcionando e se o usuário está perto o suficiente.
-      const TARGET_LAT = -4.466122627460742;
-      const TARGET_LNG = -38.90073652916311;
-
-      function calcDistancia(lat1, lng1, lat2, lng2) {
-        const R   = 6371000; // metros
-        const dLat = (lat2 - lat1) * Math.PI / 180;
-        const dLng = (lng2 - lng1) * Math.PI / 180;
-        const a   = Math.sin(dLat/2)**2 +
-                    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-                    Math.sin(dLng/2)**2;
-        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      }
-
-      if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(
-          (pos) => {
-            const dist = calcDistancia(
-              pos.coords.latitude, pos.coords.longitude,
-              TARGET_LAT, TARGET_LNG
-            ).toFixed(0);
-            debugInfo.innerHTML =
-              `📡 GPS OK | Precisão: ${pos.coords.accuracy.toFixed(0)}m<br>` +
-              `📍 Distância do ponto: <strong>${dist}m</strong>`;
-          },
-          (err) => {
-            debugInfo.innerHTML = `❌ GPS erro: ${err.message}`;
-          },
-          { enableHighAccuracy: true, maximumAge: 2000 }
-        );
-      } else {
-        debugInfo.innerHTML = '❌ GPS não suportado neste dispositivo';
-      }
-
-      // ── Confirma carregamento do modelo 3D ────────────────────
-      document.querySelector('#radio-model').addEventListener('model-loaded', () => {
-        console.log('✅ Modelo 3D carregado com sucesso!');
-        debugInfo.innerHTML += '<br>✅ Modelo 3D carregado';
-      });
-
-      document.querySelector('#radio-model').addEventListener('model-error', (e) => {
-        console.error('❌ Erro ao carregar modelo 3D:', e);
-        debugInfo.innerHTML += '<br>❌ Erro no modelo 3D (verifique o caminho do .glb)';
-      });
+      carregarAudio();
     </script>
   </body>
 </html>
