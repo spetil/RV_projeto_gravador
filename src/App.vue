@@ -77,6 +77,7 @@ import { ref } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
 import Praca from '../views/praca.vue' 
+//n coloquei essa bomba em variavel de ambiente pq é só so pra ficar mais facil pra glr testar, se for implementar de verdade esconde isso.
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
 const showModal = ref(false)

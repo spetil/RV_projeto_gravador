@@ -26,8 +26,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { createClient } from '@supabase/supabase-js'
-
-// Suas credenciais do Supabase
+//n coloquei essa bomba em variavel de ambiente pq é só leitura mesmo, n tem segredo nenhum
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
 const supabase = createClient(supabaseUrl, supabaseKey)
