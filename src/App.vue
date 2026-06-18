@@ -1,5 +1,6 @@
 <template>
-  <div class="container">
+  <div v-if="!mostrarPraca" class="container">
+    
     <div v-if="isRecording" class="timer">
       00:{{ remainingTime.toString().padStart(2, '0') }}
     </div>
@@ -57,22 +58,34 @@
       controls
       class="audio-player"
     />
+
+    <div v-if="showModal" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Que tal irmos para a Praça do Leão?</h2>
+        <p>Vamos ouvir sua mensagem e a das outras pessoas!</p>
+        <button @click="goToPraca" class="btn-vamos-la">Vamos lá!</button>
+      </div>
+    </div>
+
   </div>
+
+  <Praca v-if="mostrarPraca" />
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
+import Praca from '../views/praca.vue' 
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
-
+const showModal = ref(false)
+const mostrarPraca = ref(false)
 const supabase = createClient(supabaseUrl, supabaseKey)
 const audioName = ref('')
 const isRecording = ref(false)
 const isUploading = ref(false)
 const audioUrl = ref(null)
-
 const maxDuration = 15
 const remainingTime = ref(maxDuration)
 
@@ -81,6 +94,10 @@ let chunks = []
 let countdownInterval
 let currentStream
 
+const goToPraca = () => {
+  showModal.value = false 
+  mostrarPraca.value = true 
+}
 function startCountdown() {
   remainingTime.value = maxDuration
   countdownInterval = setInterval(() => {
@@ -151,7 +168,7 @@ const uploadAudio = async (audioBlob) => {
 
     if (dbError) throw dbError
 
-    alert('Mensagem enviada com sucesso para a praça!')
+    showModal.value = true;
 
   } catch (error) {
     console.error('Erro no processo de upload:', error)
@@ -277,5 +294,60 @@ body {
   0%   { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
   50%  { opacity: 0.55; transform: scale(1.22) translate(-18px, -14px); }
   100% { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85); 
+  backdrop-filter: blur(5px); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; 
+}
+
+.modal-content {
+  background: #111;
+  padding: 40px;
+  border-radius: 16px;
+  text-align: center;
+  max-width: 90%;
+  width: 400px;
+  border: 1px solid #333;
+  box-shadow: 0 8px 32px rgba(255, 45, 85, 0.2); 
+}
+
+.modal-content h2 {
+  color: white;
+  margin-bottom: 15px;
+  font-family: sans-serif;
+  font-size: 1.5rem;
+}
+
+.modal-content p {
+  color: #aaa;
+  margin-bottom: 30px;
+  font-family: sans-serif;
+  line-height: 1.4;
+}
+
+.btn-vamos-la {
+  background: #ff2d55; 
+  color: white;
+  border: none;
+  padding: 14px 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.btn-vamos-la:hover {
+  background: #ff0033;
+  transform: scale(1.05);
 }
 </style>
