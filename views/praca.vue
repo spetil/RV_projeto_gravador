@@ -9,7 +9,7 @@
 
     <div v-else class="playing-screen">
       <h2>Tocando os sons da praça... 🔊</h2>
-      <p>Mensagens na fila: {{ playlist.length }}</p>
+      <p>Quantidade de mensagens enviadas: {{ playlist.length }}</p>
 
       <audio
         ref="meuAudio"
