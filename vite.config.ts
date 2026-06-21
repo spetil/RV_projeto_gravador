@@ -4,10 +4,13 @@ import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [vue()],
+  
+  // 👇 ESTA É A LINHA QUE CORRIGE A TELA BRANCA EM PRODUÇÃO 👇
+  base: './', 
+  
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
     },
   },
-  // Certifique-se de que NÃO HÁ a propriedade build.rollupOptions.input com "ar.html" aqui!
 })
