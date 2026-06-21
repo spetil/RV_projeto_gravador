@@ -43,14 +43,20 @@ versão de aula para teste incial
         bottom: 30px; left: 50%;
         transform: translateX(-50%);
         z-index: 9999; text-align: center;
+        display: flex; flex-direction: column; gap: 12px; align-items: center;
       }
-      #play-btn {
+      .btn {
         background-color: #ff2d55; color: white;
         padding: 15px 30px; border: none;
         border-radius: 50px; font-size: 1.1rem;
         font-family: monospace; font-weight: bold;
-        cursor: pointer; display: none;
+        cursor: pointer;
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        display: none;
+      }
+      #fora-btn {
+        background-color: #555;
+        display: none;
       }
     </style>
   </head>
@@ -59,7 +65,10 @@ versão de aula para teste incial
     <div id="debug-panel">🔄 Aguardando GPS...</div>
 
     <div class="ui-container">
-      <button id="play-btn">Carregando voz... ⏳</button>
+      <!-- Botão que aparece quando está NA praça -->
+      <button id="play-btn" class="btn">🔊 Ouvir próxima mensagem</button>
+      <!-- Aviso quando está FORA da praça -->
+      <button id="fora-btn" class="btn">📍 Vá até a praça para ouvir</button>
     </div>
 
     <a-scene
@@ -72,33 +81,33 @@ versão de aula para teste incial
         <a-asset-item id="meu-modelo3d" src="vintage radio.glb"></a-asset-item>
       </a-assets>
 
-      <!--
-        gpsMinAccuracy: aceita GPS com até 3000m de precisão (padrão era ~100m)
-        positionMinAccuracy: mesmo filtro no componente de entidade
-      -->
       <a-camera gps-new-camera='gpsMinDistance: 5; positionMinAccuracy: 3000'></a-camera>
 
       <a-box
         color="red"
         gps-new-entity-place="latitude: -4.466122627460742; longitude: -38.90073652916311"
-        scale="800 800 800">
+        scale="20 20 20">
       </a-box>
 
       <a-entity
         gltf-model="#meu-modelo3d"
         gps-new-entity-place="latitude: -4.466122627460742; longitude: -38.90073652916311"
-        scale="800 800 800"
+        scale="20 20 20"
         animation="property: rotation; to: 0 360 0; loop: true; dur: 8000; easing: linear"
       ></a-entity>
     </a-scene>
 
     <script>
+      // ── Config ────────────────────────────────────────────────────────
+      const TARGET_LAT = -4.466122627460742;
+      const TARGET_LNG = -38.90073652916311;
+      const RAIO_METROS = 150; // distância máxima para tocar o áudio
+
+      // ── Debug ─────────────────────────────────────────────────────────
       const debugEl = document.getElementById('debug-panel');
       function log(msg) { debugEl.innerHTML = msg; }
 
-      const TARGET_LAT = -4.466122627460742;
-      const TARGET_LNG = -38.90073652916311;
-
+      // ── Distância ─────────────────────────────────────────────────────
       function calcDist(lat1, lng1, lat2, lng2) {
         const R = 6371000;
         const dL = (lat2 - lat1) * Math.PI / 180;
@@ -108,15 +117,120 @@ versão de aula para teste incial
         return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       }
 
+      // ── Estado ────────────────────────────────────────────────────────
+      let fila = [];           // fila embaralhada de áudios
+      let indiceAtual = 0;     // posição na fila
+      let estaNoLocal = false;
+      let tocando = false;
+      const audioPlayer = new Audio();
+
+      const playBtn  = document.getElementById('play-btn');
+      const foraBtn  = document.getElementById('fora-btn');
+
+      // ── Supabase ──────────────────────────────────────────────────────
+      const supabase = window.supabase.createClient(
+        'https://ppsdcoifaifrfgzovwwu.supabase.co',
+        'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
+      );
+
+      async function carregarFila() {
+        try {
+          const { data, error } = await supabase.from('mensagens').select('id, audio_url');
+          if (error) throw error;
+          if (data && data.length > 0) {
+            // Embaralha a lista (Fisher-Yates shuffle)
+            fila = [...data];
+            for (let i = fila.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [fila[i], fila[j]] = [fila[j], fila[i]];
+            }
+            indiceAtual = 0;
+            log(`✅ GPS OK | 🎵 ${fila.length} mensagem(ns) na fila`);
+          } else {
+            log('⚠️ Nenhuma mensagem gravada ainda');
+          }
+        } catch (e) {
+          log('❌ Erro ao carregar mensagens: ' + e.message);
+        }
+      }
+
+      // ── Toca o próximo áudio da fila ──────────────────────────────────
+      function tocarProximo() {
+        if (fila.length === 0) {
+          log('⚠️ Nenhuma mensagem disponível');
+          return;
+        }
+
+        // Se chegou no fim da fila, reembaralha e começa de novo
+        if (indiceAtual >= fila.length) {
+          for (let i = fila.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [fila[i], fila[j]] = [fila[j], fila[i]];
+          }
+          indiceAtual = 0;
+          log(`🔀 Fila reiniciada com ${fila.length} mensagem(ns)`);
+        }
+
+        const mensagem = fila[indiceAtual];
+        audioPlayer.src = mensagem.audio_url;
+        audioPlayer.play();
+        tocando = true;
+        playBtn.innerText = '⏸️ Pausar';
+        log(`▶️ Tocando mensagem ${indiceAtual + 1} de ${fila.length}`);
+      }
+
+      // Quando um áudio termina, avança para o próximo automaticamente
+      audioPlayer.addEventListener('ended', () => {
+        indiceAtual++;
+        tocando = false;
+        playBtn.innerText = '🔊 Ouvir próxima mensagem';
+        log(`✅ Mensagem ${indiceAtual} de ${fila.length} concluída`);
+      });
+
+      // ── Botão play/pause ──────────────────────────────────────────────
+      playBtn.addEventListener('click', () => {
+        if (!estaNoLocal) return;
+
+        if (tocando && !audioPlayer.paused) {
+          audioPlayer.pause();
+          tocando = false;
+          playBtn.innerText = '▶️ Continuar';
+        } else if (!audioPlayer.paused || audioPlayer.currentTime === 0 || audioPlayer.ended) {
+          tocarProximo();
+        } else {
+          audioPlayer.play();
+          tocando = true;
+          playBtn.innerText = '⏸️ Pausar';
+        }
+      });
+
+      // ── GPS: verifica se está no local ───────────────────────────────
       navigator.geolocation.watchPosition(
         (pos) => {
-          const dist = calcDist(
-            pos.coords.latitude, pos.coords.longitude,
-            TARGET_LAT, TARGET_LNG
-          ).toFixed(0);
-          const prec = pos.coords.accuracy.toFixed(0);
-          const aviso = prec > 100 ? ' ⚠️ precisão baixa' : '';
-          log(`✅ GPS OK | precisão: ${prec}m${aviso} | distância: ${dist}m`);
+          const { latitude, longitude, accuracy } = pos.coords;
+          const dist = calcDist(latitude, longitude, TARGET_LAT, TARGET_LNG);
+          const distFmt = dist.toFixed(0);
+          const precFmt = accuracy.toFixed(0);
+
+          estaNoLocal = dist <= RAIO_METROS;
+
+          if (estaNoLocal) {
+            log(`✅ GPS OK | precisão: ${precFmt}m | 📍 Você está no local! (${distFmt}m)`);
+            playBtn.style.display  = 'inline-block';
+            foraBtn.style.display  = 'none';
+            // Para o áudio se sair do local não é necessário aqui,
+            // mas garante que o botão correto apareça
+          } else {
+            log(`✅ GPS OK | precisão: ${precFmt}m | 🚶 ${distFmt}m do ponto`);
+            playBtn.style.display  = 'none';
+            foraBtn.style.display  = 'inline-block';
+            // Se sair do local enquanto tocava, pausa o áudio
+            if (tocando && !audioPlayer.paused) {
+              audioPlayer.pause();
+              tocando = false;
+              playBtn.innerText = '🔊 Ouvir próxima mensagem';
+            }
+          }
         },
         (err) => {
           log(`❌ GPS erro ${err.code}: ${err.message}`);
@@ -124,45 +238,8 @@ versão de aula para teste incial
         { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
       );
 
-      // Supabase / Áudio
-      const supabase = window.supabase.createClient(
-        'https://ppsdcoifaifrfgzovwwu.supabase.co',
-        'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
-      );
-
-      const audioPlayer = new Audio();
-      const playBtn = document.getElementById('play-btn');
-      playBtn.style.display = 'inline-block';
-
-      async function carregarAudio() {
-        try {
-          const { data, error } = await supabase.from('mensagens').select('audio_url');
-          if (error) throw error;
-          if (data && data.length > 0) {
-            const s = data[Math.floor(Math.random() * data.length)];
-            audioPlayer.src = s.audio_url;
-            audioPlayer.oncanplaythrough = () => {
-              playBtn.innerText = '🔊 Ouvir Mensagem Aleatória';
-            };
-          } else {
-            playBtn.innerText = 'Nenhuma mensagem';
-          }
-        } catch (e) {
-          playBtn.innerText = 'Erro ❌';
-        }
-      }
-
-      playBtn.addEventListener('click', () => {
-        if (audioPlayer.paused) {
-          audioPlayer.play();
-          playBtn.innerText = '⏸️ Pausar';
-        } else {
-          audioPlayer.pause();
-          playBtn.innerText = '🔊 Ouvir Mensagem Aleatória';
-        }
-      });
-
-      carregarAudio();
+      // Carrega a fila ao abrir
+      carregarFila();
     </script>
   </body>
 </html>
