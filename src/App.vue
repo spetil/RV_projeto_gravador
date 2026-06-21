@@ -68,20 +68,16 @@
     </div>
 
   </div>
-
-  <Praca v-if="mostrarPraca" />
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
-import Praca from '../views/praca.vue' 
 //n coloquei essa bomba em variavel de ambiente pq é só so pra ficar mais facil pra glr testar, se for implementar de verdade esconde isso.
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
 const showModal = ref(false)
-const mostrarPraca = ref(false)
 const supabase = createClient(supabaseUrl, supabaseKey)
 const audioName = ref('')
 const isRecording = ref(false)
@@ -97,7 +93,10 @@ let currentStream
 
 const goToPraca = () => {
   showModal.value = false 
-  mostrarPraca.value = true 
+  // Redireciona para a experiência de RA (ar.html), que tem GPS,
+  // objetos 3D flutuando e reprodução automática de áudio por proximidade.
+  // Ajuste o caminho abaixo se o ar.html estiver em outra pasta do seu repositório.
+  window.location.href = 'ar.html'
 }
 function startCountdown() {
   remainingTime.value = maxDuration
