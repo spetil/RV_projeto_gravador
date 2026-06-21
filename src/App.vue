@@ -116,13 +116,14 @@
 import { ref } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
+
+// Importação com ../ para sair de 'src' e aceder a 'views' na raiz
 import PracaComponente from '../views/praca.vue'
 
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Controle de fluxo estável: 'resumo' -> 'gravacao' -> 'jornada' -> 'ar'
 const passoAtual = ref('resumo')
 
 const audioName = ref('')
@@ -184,7 +185,7 @@ const startRecording = async () => {
     isRecording.value = true
     startCountdown()
   } catch (err) {
-    alert('Erro ao acessar o microfone. Certifique-se de dar permissão para continuar.')
+    alert('Erro ao aceder ao microfone. Certifique-se de dar permissão para continuar.')
   }
 }
 
@@ -266,7 +267,6 @@ body {
   height: 100vh;
 }
 
-/* --- ESTILOS DA TELA 1: RESUMO DO PROJETO --- */
 .resumo-wrapper {
   cursor: pointer;
 }
@@ -324,7 +324,6 @@ body {
   padding-bottom: 6px;
 }
 
-/* --- ESTILOS DA TELA 3: DIRECIONAMENTO PARA A PRAÇA --- */
 .jornada-card {
   background: #0a0a0a;
   border: 1px solid #ff2d5533;
@@ -406,7 +405,6 @@ body {
   transform: scale(1.02);
 }
 
-/* --- COMPONENTES PADRÕES --- */
 .timer {
   color: white;
   font-size: 3rem;
