@@ -38,38 +38,11 @@ versão de aula para teste incial
         line-height: 1.6;
         pointer-events: none;
       }
-      .ui-container {
-        position: fixed;
-        bottom: 30px; left: 50%;
-        transform: translateX(-50%);
-        z-index: 9999; text-align: center;
-        display: flex; flex-direction: column; gap: 12px; align-items: center;
-      }
-      .btn {
-        background-color: #ff2d55; color: white;
-        padding: 15px 30px; border: none;
-        border-radius: 50px; font-size: 1.1rem;
-        font-family: monospace; font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        display: none;
-      }
-      #fora-btn {
-        background-color: #555;
-        display: none;
-      }
     </style>
   </head>
   <body style="margin:0;overflow:hidden;">
 
     <div id="debug-panel">🔄 Aguardando GPS...</div>
-
-    <div class="ui-container">
-      <!-- Botão que aparece quando está NA praça -->
-      <button id="play-btn" class="btn">🔊 Ouvir próxima mensagem</button>
-      <!-- Aviso quando está FORA da praça -->
-      <button id="fora-btn" class="btn">📍 Vá até a praça para ouvir</button>
-    </div>
 
     <a-scene
       vr-mode-ui='enabled: false'
@@ -118,14 +91,11 @@ versão de aula para teste incial
       }
 
       // ── Estado ────────────────────────────────────────────────────────
-      let fila = [];           // fila embaralhada de áudios
-      let indiceAtual = 0;     // posição na fila
+      let fila = [];
+      let indiceAtual = 0;
       let estaNoLocal = false;
-      let tocando = false;
+      let estavaNoLocal = false; // valor anterior, pra detectar transição
       const audioPlayer = new Audio();
-
-      const playBtn  = document.getElementById('play-btn');
-      const foraBtn  = document.getElementById('fora-btn');
 
       // ── Supabase ──────────────────────────────────────────────────────
       const supabase = window.supabase.createClient(
@@ -133,78 +103,64 @@ versão de aula para teste incial
         'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
       );
 
+      function embaralhar(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      }
+
       async function carregarFila() {
         try {
           const { data, error } = await supabase.from('mensagens').select('id, audio_url');
           if (error) throw error;
           if (data && data.length > 0) {
-            // Embaralha a lista (Fisher-Yates shuffle)
-            fila = [...data];
-            for (let i = fila.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [fila[i], fila[j]] = [fila[j], fila[i]];
-            }
+            fila = embaralhar([...data]);
             indiceAtual = 0;
-            log(`✅ GPS OK | 🎵 ${fila.length} mensagem(ns) na fila`);
-          } else {
-            log('⚠️ Nenhuma mensagem gravada ainda');
           }
         } catch (e) {
-          log('❌ Erro ao carregar mensagens: ' + e.message);
+          console.error('Erro ao carregar mensagens:', e);
         }
       }
 
-      // ── Toca o próximo áudio da fila ──────────────────────────────────
+      // ── Toca o próximo áudio da fila automaticamente ─────────────────
       function tocarProximo() {
-        if (fila.length === 0) {
-          log('⚠️ Nenhuma mensagem disponível');
-          return;
-        }
+        if (fila.length === 0) return;
 
-        // Se chegou no fim da fila, reembaralha e começa de novo
         if (indiceAtual >= fila.length) {
-          for (let i = fila.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [fila[i], fila[j]] = [fila[j], fila[i]];
-          }
+          fila = embaralhar(fila);
           indiceAtual = 0;
-          log(`🔀 Fila reiniciada com ${fila.length} mensagem(ns)`);
         }
 
         const mensagem = fila[indiceAtual];
         audioPlayer.src = mensagem.audio_url;
-        audioPlayer.play();
-        tocando = true;
-        playBtn.innerText = '⏸️ Pausar';
-        log(`▶️ Tocando mensagem ${indiceAtual + 1} de ${fila.length}`);
+        audioPlayer.play().catch(() => {
+          // navegadores podem bloquear autoplay sem interação prévia;
+          // nesse caso o áudio só tocará após o primeiro toque na tela
+        });
       }
 
-      // Quando um áudio termina, avança para o próximo automaticamente
+      // Quando um áudio termina, toca o próximo automaticamente (se ainda estiver no local)
       audioPlayer.addEventListener('ended', () => {
         indiceAtual++;
-        tocando = false;
-        playBtn.innerText = '🔊 Ouvir próxima mensagem';
-        log(`✅ Mensagem ${indiceAtual} de ${fila.length} concluída`);
-      });
-
-      // ── Botão play/pause ──────────────────────────────────────────────
-      playBtn.addEventListener('click', () => {
-        if (!estaNoLocal) return;
-
-        if (tocando && !audioPlayer.paused) {
-          audioPlayer.pause();
-          tocando = false;
-          playBtn.innerText = '▶️ Continuar';
-        } else if (!audioPlayer.paused || audioPlayer.currentTime === 0 || audioPlayer.ended) {
+        if (estaNoLocal) {
           tocarProximo();
-        } else {
-          audioPlayer.play();
-          tocando = true;
-          playBtn.innerText = '⏸️ Pausar';
         }
       });
 
-      // ── GPS: verifica se está no local ───────────────────────────────
+      // Desbloqueia autoplay no primeiro toque na tela (necessário em iOS/Android)
+      let autoplayDesbloqueado = false;
+      document.body.addEventListener('click', () => {
+        if (!autoplayDesbloqueado) {
+          autoplayDesbloqueado = true;
+          if (estaNoLocal && audioPlayer.paused && !audioPlayer.src) {
+            tocarProximo();
+          }
+        }
+      }, { once: true });
+
+      // ── GPS: controla play/pause conforme entra/sai do local ─────────
       navigator.geolocation.watchPosition(
         (pos) => {
           const { latitude, longitude, accuracy } = pos.coords;
@@ -215,22 +171,26 @@ versão de aula para teste incial
           estaNoLocal = dist <= RAIO_METROS;
 
           if (estaNoLocal) {
-            log(`✅ GPS OK | precisão: ${precFmt}m | 📍 Você está no local! (${distFmt}m)`);
-            playBtn.style.display  = 'inline-block';
-            foraBtn.style.display  = 'none';
-            // Para o áudio se sair do local não é necessário aqui,
-            // mas garante que o botão correto apareça
+            log(`✅ GPS OK | precisão: ${precFmt}m | 📍 Na praça (${distFmt}m)`);
           } else {
-            log(`✅ GPS OK | precisão: ${precFmt}m | 🚶 ${distFmt}m do ponto`);
-            playBtn.style.display  = 'none';
-            foraBtn.style.display  = 'inline-block';
-            // Se sair do local enquanto tocava, pausa o áudio
-            if (tocando && !audioPlayer.paused) {
-              audioPlayer.pause();
-              tocando = false;
-              playBtn.innerText = '🔊 Ouvir próxima mensagem';
+            log(`✅ GPS OK | precisão: ${precFmt}m | 🚶 ${distFmt}m da praça`);
+          }
+
+          // Transição: ACABOU de chegar na praça → começa a tocar
+          if (estaNoLocal && !estavaNoLocal) {
+            if (audioPlayer.paused) {
+              tocarProximo();
             }
           }
+
+          // Transição: ACABOU de sair da praça → pausa
+          if (!estaNoLocal && estavaNoLocal) {
+            if (!audioPlayer.paused) {
+              audioPlayer.pause();
+            }
+          }
+
+          estavaNoLocal = estaNoLocal;
         },
         (err) => {
           log(`❌ GPS erro ${err.code}: ${err.message}`);
@@ -238,7 +198,6 @@ versão de aula para teste incial
         { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
       );
 
-      // Carrega a fila ao abrir
       carregarFila();
     </script>
   </body>
