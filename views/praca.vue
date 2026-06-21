@@ -73,8 +73,8 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 // 👉 CONFIGURAÇÃO DO PONTO DA PRAÇA DO LEÃO — EDITE AQUI
 // ======================================================================
 const PONTO_PRACA = {
-  latitude: -4.466107,   // <-- TROQUE pela latitude real da Praça do Leão
-  longitude: -38.900730, // <-- TROQUE pela longitude real da Praça do Leão
+  latitude: -4.466138,   // <-- -4.466138, -38.900819
+  longitude: -38.900819, // <-- TROQUE pela longitude real da Praça do Leão
 }
 
 // Raio de ativação: distância (em metros) que o usuário precisa estar
