@@ -9,12 +9,5 @@ export default defineConfig({
       '@': resolve(__dirname, './src'),
     },
   },
-  build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-        ar: resolve(__dirname, 'ar.html'), // <--- ADICIONE ISSO AQUI
-      },
-    },
-  },
+  // Certifique-se de que NÃO HÁ a propriedade build.rollupOptions.input com "ar.html" aqui!
 })
