@@ -42,9 +42,9 @@
 
         <a-entity
           ref="modeloRef"
-          gltf-model="url(/models/modelo-praca.glb)"
+          gltf-model="url(/vintage radio.glb)"
           scale="1 1 1"
-          gps-entity-place="latitude: 0; longitude: 0;"
+          gps-entity-place="latitude: -4.466107; longitude: -38.900730;"
           rotation="0 180 0"
         ></a-entity>
       </a-scene>
@@ -72,17 +72,14 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 // ======================================================================
 // 👉 CONFIGURAÇÃO DO PONTO DA PRAÇA DO LEÃO — EDITE AQUI
 // ======================================================================
-// Coloque aqui a latitude e longitude exatas de onde o modelo 3D e os
-// áudios devem aparecer. Pegue essas coordenadas no Google Maps
-// (clique com botão direito no ponto exato -> copia as coordenadas).
 const PONTO_PRACA = {
-  latitude: -4.97278,   // <-- TROQUE pela latitude real da Praça do Leão
-  longitude: -39.01528, // <-- TROQUE pela longitude real da Praça do Leão
+  latitude: -4.466107,   // <-- TROQUE pela latitude real da Praça do Leão
+  longitude: -38.900730, // <-- TROQUE pela longitude real da Praça do Leão
 }
 
 // Raio de ativação: distância (em metros) que o usuário precisa estar
 // do PONTO_PRACA para a câmera AR abrir e o áudio começar a tocar.
-const RAIO_ATIVACAO_METROS = 20
+const RAIO_ATIVACAO_METROS = 30
 // ======================================================================
 
 // 👉 ARQUIVO DO MODELO 3D — coloque o seu .glb em:
