@@ -96,26 +96,29 @@
       
       <p>
         O rádio vintage virtual do Mestre Adolfo já está esperando por você. 
-        Ao chegar lá com o GPS ligado, a Realidade Aumentada abrirá sozinha e tocará sua mensagem em loop na praça!
+        Ao chegar lá com o GPS ligado, clique no botão abaixo para abrir a Realidade Aumentada!
       </p>
 
       <button @click="goToPraca" class="btn-abrir-ar">
-        Estou a caminho / Abrir Mapa AR
+        Cheguei / Abrir Mapa AR 📷
       </button>
     </div>
   </div>
+
+  <PracaComponente v-else-if="passoAtual === 'ar'" />
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
+import PracaComponente from './praca.vue' // <--- IMPORTANDO SEU COMPONENTE DA PRAÇA AQUI!
 
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Controle de fluxo de telas: 'resumo' -> 'gravacao' -> 'jornada'
+// Controle de fluxo: 'resumo' -> 'gravacao' -> 'jornada' -> 'ar'
 const passoAtual = ref('resumo')
 
 const audioName = ref('')
@@ -135,8 +138,8 @@ const avancarParaGravacao = () => {
 }
 
 const goToPraca = () => {
-  // Redireciona diretamente para a tela de RA do praca.vue (mapeada no ar.html)
-  window.location.href = 'ar.html'
+  // Muda o estado para 'ar', renderizando diretamente o componente praca.vue na tela
+  passoAtual.value = 'ar'
 }
 
 function startCountdown() {
@@ -157,25 +160,29 @@ const startRecording = async () => {
   
   audioUrl.value = null 
   
-  currentStream = await navigator.mediaDevices.getUserMedia({ audio: true })
-  mediaRecorder = new MediaRecorder(currentStream)
-  chunks = []
+  try {
+    currentStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    mediaRecorder = new MediaRecorder(currentStream)
+    chunks = []
 
-  mediaRecorder.ondataavailable = (event) => {
-    chunks.push(event.data)
+    mediaRecorder.ondataavailable = (event) => {
+      chunks.push(event.data)
+    }
+
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(chunks, { type: 'audio/webm' })
+      audioUrl.value = URL.createObjectURL(blob) 
+      currentStream?.getTracks().forEach(track => track.stop())
+      
+      await uploadAudio(blob)
+    }
+
+    mediaRecorder.start()
+    isRecording.value = true
+    startCountdown()
+  } catch (err) {
+    alert('Erro ao acessar o microfone. Permita o acesso para continuar.')
   }
-
-  mediaRecorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: 'audio/webm' })
-    audioUrl.value = URL.createObjectURL(blob) 
-    currentStream?.getTracks().forEach(track => track.stop())
-    
-    await uploadAudio(blob)
-  }
-
-  mediaRecorder.start()
-  isRecording.value = true
-  startCountdown()
 }
 
 const stopRecording = () => {
@@ -209,12 +216,12 @@ const uploadAudio = async (audioBlob) => {
 
     if (dbError) throw dbError
 
-    // Avança para a última tela em vez de exibir um Modal sumindo
+    // Avança para a tela da jornada na praça
     passoAtual.value = 'jornada'
 
   } catch (error) {
     console.error('Erro no processo de upload:', error)
-    alert('Erro ao enviar o áudio. Verifique as configurações do Supabase.')
+    alert('Erro ao enviar o áudio. Verifique sua conexão ou configurações.')
   } finally {
     isUploading.value = false
   }
@@ -230,13 +237,13 @@ const uploadAudio = async (audioBlob) => {
 
 body {
   background: #000;
-  overflow: hidden;
+  overflow-x: hidden;
   font-family: sans-serif;
 }
 
 #app {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 .container {
@@ -394,7 +401,7 @@ body {
 }
 
 
-/* --- COMPONENTES PADRÕES REAPROVEITADOS --- */
+/* --- COMPONENTES REAPROVEITADOS --- */
 .timer {
   color: white;
   font-size: 3rem;
@@ -478,8 +485,8 @@ body {
   animation: heartPulse 1.5s ease-in-out infinite;
 }
 @keyframes heartPulse {
-  0%   { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
-  50%  { opacity: 0.55; transform: scale(1.22) translate(-18px, -14px); }
+  0% { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
+  50% { opacity: 0.55; transform: scale(1.22) translate(-18px, -14px); }
   100% { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
 }
 
