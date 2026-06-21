@@ -1,134 +1,104 @@
 <template>
-  <div class="container">
-    <div v-if="showWelcome" class="popup-overlay">
-      <div class="popup-content">
-        <h2 style="font-size: 1.8rem; margin-bottom: 15px; color: #ff2d55;">Bem-vindo! 🎙️</h2>
-        <p style="margin-bottom: 15px; font-size: 1.1rem; line-height: 1.5;">
-          Este é um projeto da diciplina de Realidade Aumentada. Grave um áudio e ele ficará guardado nas coordenadas exatas deste local assim como na época onde um homem tinha um microfone em casa e um alto falante na praça onde ele falava noticias,fofocas e outras coisas.
-        </p>
-        <p style="margin-bottom: 25px; color: #ccc;">
-          Qualquer pessoa que vier até aqui poderá usar a câmera para ver objetos virtuais e ouvir as mensagens!
-        </p>
-        <button @click="showWelcome = false" class="btn-start">Começar</button>
-      </div>
+  <div v-if="!mostrarPraca" class="container">
+    
+    <div v-if="isRecording" class="timer">
+      00:{{ remainingTime.toString().padStart(2, '0') }}
     </div>
-    <div v-if="!uploadFinalizado" style="display: flex; flex-direction: column; align-items: center; gap: 40px; width: 100%;">
-      
-      <div v-if="isRecording" class="timer">
-        00:{{ remainingTime.toString().padStart(2, '0') }}
-      </div>
 
-      <input
-        v-model="audioName"
-        class="name-input"
-        maxlength="30"
-        placeholder="Digite seu nome"
-        :disabled="isUploading"
-      />
+    <input
+      v-model="audioName"
+      class="name-input"
+      maxlength="30"
+      placeholder="Digite seu nome"
+      :disabled="isUploading"
+    />
 
-      <div v-if="isUploading" style="color: white; font-family: monospace;">
-        Enviando para seu amor......ou qualquer aleatório que queira ouvir.
-      </div>
+    <div v-if="isUploading" style="color: white; font-family: monospace;">
+      Enviando para seu amor......ou qualquer aleatório que queira ouvir.
+    </div>
 
-      <button
-        v-if="!isRecording && !isUploading"
-        class="heart-btn record-btn"
-        @click="startRecording"
-      >
-        <div class="heart-wrapper">
-          <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
-            <path
-              class="heart-glow"
-              d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
-              transform="scale(1.18) translate(-16, -12)"
-            />
-            <path
-              class="heart-path"
-              d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
-            />
-          </svg>
-          <Mic class="heart-icon" :size="52" />
-        </div>
-      </button>
-
-      <button
-        v-else-if="isRecording"
-        class="heart-btn stop-btn"
-        @click="stopRecording"
-      >
+    <button
+      v-if="!isRecording && !isUploading"
+      class="heart-btn record-btn"
+      @click="startRecording"
+    >
+      <div class="heart-wrapper">
         <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
           <path
-            class="heart-path-stop"
+            class="heart-glow"
+            d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
+            transform="scale(1.18) translate(-16, -12)"
+          />
+          <path
+            class="heart-path"
             d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
           />
         </svg>
-        <Square class="heart-icon heart-icon-stop" :size="40" />
-      </button>
-
-      <audio
-        v-if="audioUrl && !isUploading"
-        :src="audioUrl"
-        controls
-        class="audio-player"
-      />
-    </div>
-
-    <div v-else style="color: white; text-align: center; font-family: monospace;">
-      <h2 style="font-size: 2rem; margin-bottom: 20px;">Mensagem Guardada! 📍</h2>
-      <p>Vá até o local abaixo para encontrar o áudio:</p>
-      
-      <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; margin: 20px 0;">
-        <p><strong>Latitude:</strong> -4.466122</p>
-        <p><strong>Longitude:</strong> -38.900736</p>
+        <Mic class="heart-icon" :size="52" />
       </div>
+    </button>
 
-      <a 
-        href="https://maps.google.com/?q=-4.466122627460742,-38.90073652916311" 
-        target="_blank"
-        style="display: block; color: #ff2d55; text-decoration: underline; margin-bottom: 40px; font-size: 1.2rem;"
-      >
-        🗺️ Como chegar lá (Google Maps)
-      </a>
+    <button
+      v-else-if="isRecording"
+      class="heart-btn stop-btn"
+      @click="stopRecording"
+    >
+      <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
+        <path
+          class="heart-path-stop"
+          d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
+        />
+      </svg>
+      <Square class="heart-icon heart-icon-stop" :size="40" />
+    </button>
 
-      <p>Quando chegar no local, abra a câmera:</p>
-      
-      <a 
-        href="./ar.html" 
-        style="background: #ff2d55; color: white; padding: 15px 30px; text-decoration: none; border-radius: 50px; font-weight: bold; display: inline-block; margin-top: 10px; font-size: 1.2rem;"
-      >
-        📷 Abrir Realidade Aumentada
-      </a>
+    <audio
+      v-if="audioUrl && !isUploading"
+      :src="audioUrl"
+      controls
+      class="audio-player"
+    />
+
+    <div v-if="showModal" class="modal-overlay">
+      <div class="modal-content">
+        <h2>Que tal irmos para a Praça do Leão?</h2>
+        <p>Vamos ouvir sua mensagem e a das outras pessoas!</p>
+        <button @click="goToPraca" class="btn-vamos-la">Vamos lá!</button>
+      </div>
     </div>
 
   </div>
+
+  <Praca v-if="mostrarPraca" />
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
-
+import Praca from '../views/praca.vue' 
+//n coloquei essa bomba em variavel de ambiente pq é só so pra ficar mais facil pra glr testar, se for implementar de verdade esconde isso.
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
-
+const showModal = ref(false)
+const mostrarPraca = ref(false)
 const supabase = createClient(supabaseUrl, supabaseKey)
 const audioName = ref('')
 const isRecording = ref(false)
 const isUploading = ref(false)
 const audioUrl = ref(null)
-
 const maxDuration = 15
 const remainingTime = ref(maxDuration)
 
-const uploadFinalizado = ref(false);
-
-const showWelcome = ref(true); // Controla o Pop-up
-  
 let mediaRecorder
 let chunks = []
 let countdownInterval
 let currentStream
 
+const goToPraca = () => {
+  showModal.value = false 
+  mostrarPraca.value = true 
+}
 function startCountdown() {
   remainingTime.value = maxDuration
   countdownInterval = setInterval(() => {
@@ -199,14 +169,13 @@ const uploadAudio = async (audioBlob) => {
 
     if (dbError) throw dbError
 
-    alert('Mensagem enviada com sucesso para a praça!')
+    showModal.value = true;
 
   } catch (error) {
     console.error('Erro no processo de upload:', error)
     alert('Erro ao enviar o áudio. Verifique as configurações do Supabase.')
   } finally {
     isUploading.value = false
-    uploadFinalizado.value = true;
   }
 }
 </script>
@@ -237,7 +206,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* Retiramos o gap: 40px daqui e colocamos no wrapper da tela 1 para não afetar a tela 2 */
+  gap: 40px;
 }
 
 .timer {
@@ -322,45 +291,64 @@ body {
   opacity: 0.3;
   animation: heartPulse 1.5s ease-in-out infinite;
 }
-
-.popup-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.85); /* Fundo escuro transparente */
-  z-index: 9999; /* Fica por cima de tudo */
-  display: flex; justify-content: center; align-items: center;
-  padding: 20px;
-}
-
-.popup-content {
-  background: #111;
-  border: 2px solid #ff2d55;
-  border-radius: 15px;
-  padding: 30px;
-  text-align: center;
-  color: white;
-  max-width: 400px;
-  font-family: monospace;
-  box-shadow: 0 0 20px rgba(255, 45, 85, 0.3);
-}
-
-.btn-start {
-  background: #ff2d55;
-  color: white;
-  border: none;
-  padding: 12px 30px;
-  font-size: 1.2rem;
-  border-radius: 50px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: transform 0.2s;
-}
-.btn-start:hover {
-  transform: scale(1.05);
-}  
 @keyframes heartPulse {
   0%   { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
   50%  { opacity: 0.55; transform: scale(1.22) translate(-18px, -14px); }
   100% { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
+}
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85); 
+  backdrop-filter: blur(5px); 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; 
+}
+
+.modal-content {
+  background: #111;
+  padding: 40px;
+  border-radius: 16px;
+  text-align: center;
+  max-width: 90%;
+  width: 400px;
+  border: 1px solid #333;
+  box-shadow: 0 8px 32px rgba(255, 45, 85, 0.2); 
+}
+
+.modal-content h2 {
+  color: white;
+  margin-bottom: 15px;
+  font-family: sans-serif;
+  font-size: 1.5rem;
+}
+
+.modal-content p {
+  color: #aaa;
+  margin-bottom: 30px;
+  font-family: sans-serif;
+  line-height: 1.4;
+}
+
+.btn-vamos-la {
+  background: #ff2d55; 
+  color: white;
+  border: none;
+  padding: 14px 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.btn-vamos-la:hover {
+  background: #ff0033;
+  transform: scale(1.05);
 }
 </style>
