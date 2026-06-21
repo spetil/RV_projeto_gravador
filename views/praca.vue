@@ -79,7 +79,7 @@ const PONTO_PRACA = {
 
 // Raio de ativação: distância (em metros) que o usuário precisa estar
 // do PONTO_PRACA para a câmera AR abrir e o áudio começar a tocar.
-const RAIO_ATIVACAO_METROS = 30
+const RAIO_ATIVACAO_METROS = 2001
 // ======================================================================
 
 // 👉 ARQUIVO DO MODELO 3D — coloque o seu .glb em:
