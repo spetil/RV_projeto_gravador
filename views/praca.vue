@@ -43,7 +43,7 @@
         <a-entity
           ref="modeloRef"
           gltf-model="url(/vintage radio.glb)"
-          scale="1 1 1"
+          scale="900 900 900"
           gps-entity-place="latitude: -4.466107; longitude: -38.900730;"
           rotation="0 180 0"
         ></a-entity>
