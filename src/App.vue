@@ -1,111 +1,115 @@
 <template>
-  <div v-if="passoAtual === 'resumo'" class="container resumo-wrapper" @click="avancarParaGravacao">
-    <div class="resumo-card" @click.stop>
-      <div class="lion-badge">🦁</div>
-      <h2>Leão de Hermes</h2>
-      <p class="projeto-tagline">Uma ponte virtual entre o passado e o presente</p>
+  <div class="main-app-wrapper">
+    <div v-if="passoAtual === 'resumo'" class="container resumo-wrapper" @click="avancarParaGravacao">
+      <div class="resumo-card" @click.stop>
+        <div class="lion-badge">🦁</div>
+        <h2>Leão de Hermes</h2>
+        <p class="projeto-tagline">Uma ponte virtual entre o passado e o presente</p>
+        
+        <div class="resumo-texto">
+          <p>
+            Este projeto revive a magia do <strong>Serviço de Alto-Falantes Solon Magalhães</strong>, 
+            criado pelo genial <strong>Mestre Adolfo</strong> em Quixadá. 
+          </p>
+          <p>
+            Antigamente, as pessoas iam até os alto-falantes da praça para deixar recados e declarações de amor. 
+            Hoje, você pode usar este microfone digital para gravar a sua mensagem!
+          </p>
+          <p class="destaque-alerta">
+            🎵 Seu áudio ficará guardado e só poderá ser ouvido através de Realidade Aumentada por quem estiver fisicamente na <strong>Praça do Leão</strong>.
+          </p>
+        </div>
+
+        <button class="btn-vamos-la" @click="avancarParaGravacao">Começar Experiência</button>
+      </div>
+    </div>
+
+    <div v-else-if="passoAtual === 'gravacao'" class="container">
       
-      <div class="resumo-texto">
-        <p>
-          Este projeto revive a magia do <strong>Serviço de Alto-Falantes Solon Magalhães</strong>, 
-          criado pelo genial <strong>Mestre Adolfo</strong> em Quixadá. 
-        </p>
-        <p>
-          Antigamente, as pessoas iam até os alto-falantes da praça para deixar recados e declarações de amor. 
-          Hoje, você pode usar este microfone digital para gravar a sua mensagem!
-        </p>
-        <p class="destaque-alerta">
-          🎵 Seu áudio ficará guardado e só poderá ser ouvido através de Realidade Aumentada por quem estiver fisicamente na <strong>Praça do Leão</strong>.
-        </p>
+      <div v-if="isRecording" class="timer">
+        00:{{ remainingTime.toString().padStart(2, '0') }}
       </div>
 
-      <button class="btn-vamos-la" @click="avancarParaGravacao">Começar Experiência</button>
-    </div>
-  </div>
+      <input
+        v-model="audioName"
+        class="name-input"
+        maxlength="30"
+        placeholder="Digite seu nome"
+        :disabled="isUploading"
+      />
 
-  <div v-else-if="passoAtual === 'gravacao'" class="container">
-    
-    <div v-if="isRecording" class="timer">
-      00:{{ remainingTime.toString().padStart(2, '0') }}
-    </div>
+      <div v-if="isUploading" style="color: white; font-family: monospace; text-align: center; padding: 0 20px;">
+        Enviando para seu amor... ou qualquer aleatório na praça ouvir.
+      </div>
 
-    <input
-      v-model="audioName"
-      class="name-input"
-      maxlength="30"
-      placeholder="Digite seu nome"
-      :disabled="isUploading"
-    />
+      <button
+        v-if="!isRecording && !isUploading"
+        class="heart-btn record-btn"
+        @click="startRecording"
+      >
+        <div class="heart-wrapper">
+          <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
+            <path
+              class="heart-glow"
+              d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
+              transform="scale(1.18) translate(-16, -12)"
+            />
+            <path
+              class="heart-path"
+              d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
+            />
+          </svg>
+          <Mic class="heart-icon" :size="52" />
+        </div>
+      </button>
 
-    <div v-if="isUploading" style="color: white; font-family: monospace; text-align: center; padding: 0 20px;">
-      Enviando para seu amor... ou qualquer aleatório na praça ouvir.
-    </div>
-
-    <button
-      v-if="!isRecording && !isUploading"
-      class="heart-btn record-btn"
-      @click="startRecording"
-    >
-      <div class="heart-wrapper">
+      <button
+        v-else-if="isRecording"
+        class="heart-btn stop-btn"
+        @click="stopRecording"
+      >
         <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
           <path
-            class="heart-glow"
-            d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
-            transform="scale(1.18) translate(-16, -12)"
-          />
-          <path
-            class="heart-path"
+            class="heart-path-stop"
             d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
           />
         </svg>
-        <Mic class="heart-icon" :size="52" />
-      </div>
-    </button>
-
-    <button
-      v-else-if="isRecording"
-      class="heart-btn stop-btn"
-      @click="stopRecording"
-    >
-      <svg class="heart-svg" viewBox="0 0 200 185" xmlns="http://www.w3.org/2000/svg">
-        <path
-          class="heart-path-stop"
-          d="M100 170 C100 170 10 110 10 55 C10 25 35 5 65 5 C80 5 92 12 100 22 C108 12 120 5 135 5 C165 5 190 25 190 55 C190 110 100 170 100 170 Z"
-        />
-      </svg>
-      <Square class="heart-icon heart-icon-stop" :size="40" />
-    </button>
-
-    <audio
-      v-if="audioUrl && !isUploading"
-      :src="audioUrl"
-      controls
-      class="audio-player"
-    />
-  </div>
-
-  <div v-else-if="passoAtual === 'jornada'" class="container praca-direcionamento">
-    <div class="jornada-card">
-      <div class="pulse-radar">
-        <div class="pin"></div>
-        <div class="pulse"></div>
-      </div>
-      
-      <h2>Sua voz foi eternizada! Transmissão agendada.</h2>
-      <h1>Vá para a Praça do Leão 🦁</h1>
-      
-      <p>
-        O rádio vintage virtual do Mestre Adolfo já está esperando por você. 
-        Ao chegar lá com o GPS ligado, clique no botão abaixo para abrir a Realidade Aumentada!
-      </p>
-
-      <button @click="goToPraca" class="btn-abrir-ar">
-        Cheguei / Abrir Mapa AR 📷
+        <Square class="heart-icon heart-icon-stop" :size="40" />
       </button>
+
+      <audio
+        v-if="audioUrl && !isUploading"
+        :src="audioUrl"
+        controls
+        class="audio-player"
+      />
+    </div>
+
+    <div v-else-if="passoAtual === 'jornada'" class="container praca-direcionamento">
+      <div class="jornada-card">
+        <div class="pulse-radar">
+          <div class="pin"></div>
+          <div class="pulse"></div>
+        </div>
+        
+        <h2>Sua voz foi eternizada! Transmissão agendada.</h2>
+        <h1>Vá para a Praça do Leão 🦁</h1>
+        
+        <p>
+          O rádio vintage virtual do Mestre Adolfo já está esperando por você. 
+          Ao chegar lá com o GPS ligado, clique no botão abaixo para abrir a Realidade Aumentada!
+        </p>
+
+        <button @click="goToPraca" class="btn-abrir-ar">
+          Cheguei / Abrir Mapa AR 📷
+        </button>
+      </div>
+    </div>
+
+    <div v-else-if="passoAtual === 'ar'" class="praca-ar-container">
+      <PracaComponente />
     </div>
   </div>
-
-  <PracaComponente v-else-if="passoAtual === 'ar'" />
 </template>
 
 <script setup>
@@ -114,12 +118,11 @@ import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
 import PracaComponente from '../views/praca.vue'
 
-  
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Controle de fluxo: 'resumo' -> 'gravacao' -> 'jornada' -> 'ar'
+// Controle de fluxo estável: 'resumo' -> 'gravacao' -> 'jornada' -> 'ar'
 const passoAtual = ref('resumo')
 
 const audioName = ref('')
@@ -139,7 +142,6 @@ const avancarParaGravacao = () => {
 }
 
 const goToPraca = () => {
-  // Muda o estado para 'ar', renderizando diretamente o componente praca.vue na tela
   passoAtual.value = 'ar'
 }
 
@@ -182,7 +184,7 @@ const startRecording = async () => {
     isRecording.value = true
     startCountdown()
   } catch (err) {
-    alert('Erro ao acessar o microfone. Permita o acesso para continuar.')
+    alert('Erro ao acessar o microfone. Certifique-se de dar permissão para continuar.')
   }
 }
 
@@ -217,12 +219,11 @@ const uploadAudio = async (audioBlob) => {
 
     if (dbError) throw dbError
 
-    // Avança para a tela da jornada na praça
     passoAtual.value = 'jornada'
 
   } catch (error) {
     console.error('Erro no processo de upload:', error)
-    alert('Erro ao enviar o áudio. Verifique sua conexão ou configurações.')
+    alert('Erro ao enviar o áudio. Tente gravar novamente.')
   } finally {
     isUploading.value = false
   }
@@ -242,9 +243,10 @@ body {
   font-family: sans-serif;
 }
 
-#app {
+.main-app-wrapper {
   width: 100%;
   min-height: 100vh;
+  background: #000;
 }
 
 .container {
@@ -257,6 +259,11 @@ body {
   align-items: center;
   gap: 40px;
   padding: 20px;
+}
+
+.praca-ar-container {
+  width: 100%;
+  height: 100vh;
 }
 
 /* --- ESTILOS DA TELA 1: RESUMO DO PROJETO --- */
@@ -317,7 +324,6 @@ body {
   padding-bottom: 6px;
 }
 
-
 /* --- ESTILOS DA TELA 3: DIRECIONAMENTO PARA A PRAÇA --- */
 .jornada-card {
   background: #0a0a0a;
@@ -350,7 +356,6 @@ body {
   margin-bottom: 35px;
 }
 
-/* Animação do radar pulsante */
 .pulse-radar {
   position: relative;
   width: 60px;
@@ -401,8 +406,7 @@ body {
   transform: scale(1.02);
 }
 
-
-/* --- COMPONENTES REAPROVEITADOS --- */
+/* --- COMPONENTES PADRÕES --- */
 .timer {
   color: white;
   font-size: 3rem;
