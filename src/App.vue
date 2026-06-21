@@ -1,5 +1,29 @@
 <template>
-  <div v-if="!mostrarPraca" class="container">
+  <div v-if="passoAtual === 'resumo'" class="container resumo-wrapper" @click="avancarParaGravacao">
+    <div class="resumo-card" @click.stop>
+      <div class="lion-badge">🦁</div>
+      <h2>Leão de Hermes</h2>
+      <p class="projeto-tagline">Uma ponte virtual entre o passado e o presente</p>
+      
+      <div class="resumo-texto">
+        <p>
+          Este projeto revive a magia do <strong>Serviço de Alto-Falantes Solon Magalhães</strong>, 
+          criado pelo genial <strong>Mestre Adolfo</strong> em Quixadá. 
+        </p>
+        <p>
+          Antigamente, as pessoas iam até os alto-falantes da praça para deixar recados e declarações de amor. 
+          Hoje, você pode usar este microfone digital para gravar a sua mensagem!
+        </p>
+        <p class="destaque-alerta">
+          🎵 Seu áudio ficará guardado e só poderá ser ouvido através de Realidade Aumentada por quem estiver fisicamente na <strong>Praça do Leão</strong>.
+        </p>
+      </div>
+
+      <button class="btn-vamos-la" @click="avancarParaGravacao">Começar Experiência</button>
+    </div>
+  </div>
+
+  <div v-else-if="passoAtual === 'gravacao'" class="container">
     
     <div v-if="isRecording" class="timer">
       00:{{ remainingTime.toString().padStart(2, '0') }}
@@ -13,8 +37,8 @@
       :disabled="isUploading"
     />
 
-    <div v-if="isUploading" style="color: white; font-family: monospace;">
-      Enviando para seu amor......ou qualquer aleatório que queira ouvir.
+    <div v-if="isUploading" style="color: white; font-family: monospace; text-align: center; padding: 0 20px;">
+      Enviando para seu amor... ou qualquer aleatório na praça ouvir.
     </div>
 
     <button
@@ -58,15 +82,27 @@
       controls
       class="audio-player"
     />
+  </div>
 
-    <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
-        <h2>Que tal irmos para a Praça do Leão?</h2>
-        <p>Vamos ouvir sua mensagem e a das outras pessoas!</p>
-        <button @click="goToPraca" class="btn-vamos-la">Vamos lá!</button>
+  <div v-else-if="passoAtual === 'jornada'" class="container praca-direcionamento">
+    <div class="jornada-card">
+      <div class="pulse-radar">
+        <div class="pin"></div>
+        <div class="pulse"></div>
       </div>
-    </div>
+      
+      <h2>Sua voz foi eternizada! Transmissão agendada.</h2>
+      <h1>Vá para a Praça do Leão 🦁</h1>
+      
+      <p>
+        O rádio vintage virtual do Mestre Adolfo já está esperando por você. 
+        Ao chegar lá com o GPS ligado, a Realidade Aumentada abrirá sozinha e tocará sua mensagem em loop na praça!
+      </p>
 
+      <button @click="goToPraca" class="btn-abrir-ar">
+        Estou a caminho / Abrir Mapa AR
+      </button>
+    </div>
   </div>
 </template>
 
@@ -74,11 +110,14 @@
 import { ref } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
-//n coloquei essa bomba em variavel de ambiente pq é só so pra ficar mais facil pra glr testar, se for implementar de verdade esconde isso.
+
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
-const showModal = ref(false)
 const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Controle de fluxo de telas: 'resumo' -> 'gravacao' -> 'jornada'
+const passoAtual = ref('resumo')
+
 const audioName = ref('')
 const isRecording = ref(false)
 const isUploading = ref(false)
@@ -91,13 +130,15 @@ let chunks = []
 let countdownInterval
 let currentStream
 
+const avancarParaGravacao = () => {
+  passoAtual.value = 'gravacao'
+}
+
 const goToPraca = () => {
-  showModal.value = false 
-  // Redireciona para a experiência de RA (ar.html), que tem GPS,
-  // objetos 3D flutuando e reprodução automática de áudio por proximidade.
-  // Ajuste o caminho abaixo se o ar.html estiver em outra pasta do seu repositório.
+  // Redireciona diretamente para a tela de RA do praca.vue (mapeada no ar.html)
   window.location.href = 'ar.html'
 }
+
 function startCountdown() {
   remainingTime.value = maxDuration
   countdownInterval = setInterval(() => {
@@ -168,7 +209,8 @@ const uploadAudio = async (audioBlob) => {
 
     if (dbError) throw dbError
 
-    showModal.value = true;
+    // Avança para a última tela em vez de exibir um Modal sumindo
+    passoAtual.value = 'jornada'
 
   } catch (error) {
     console.error('Erro no processo de upload:', error)
@@ -189,6 +231,7 @@ const uploadAudio = async (audioBlob) => {
 body {
   background: #000;
   overflow: hidden;
+  font-family: sans-serif;
 }
 
 #app {
@@ -200,14 +243,158 @@ body {
   width: 100%;
   height: 100vh;
   background: #000;
-
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 40px;
+  padding: 20px;
 }
 
+/* --- ESTILOS DA TELA 1: RESUMO DO PROJETO --- */
+.resumo-wrapper {
+  cursor: pointer;
+}
+
+.resumo-card {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 20px;
+  padding: 30px 24px;
+  max-width: 450px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.lion-badge {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.resumo-card h2 {
+  color: white;
+  font-size: 1.8rem;
+  margin-bottom: 4px;
+}
+
+.projeto-tagline {
+  color: #ff2d55;
+  font-size: 0.95rem;
+  font-weight: bold;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.resumo-texto {
+  color: #ccc;
+  text-align: left;
+  line-height: 1.6;
+  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 30px;
+}
+
+.destaque-alerta {
+  border-left: 3px solid #ff2d55;
+  padding-left: 12px;
+  color: #eee;
+  font-style: italic;
+  font-size: 0.95rem;
+  background: rgba(255, 45, 85, 0.05);
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+
+/* --- ESTILOS DA TELA 3: DIRECIONAMENTO PARA A PRAÇA --- */
+.jornada-card {
+  background: #0a0a0a;
+  border: 1px solid #ff2d5533;
+  padding: 40px 24px;
+  border-radius: 24px;
+  text-align: center;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 0 30px rgba(255, 45, 85, 0.15);
+}
+
+.jornada-card h2 {
+  color: #aaa;
+  font-size: 1.1rem;
+  font-weight: normal;
+  margin-bottom: 10px;
+}
+
+.jornada-card h1 {
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 24px;
+}
+
+.jornada-card p {
+  color: #888;
+  line-height: 1.6;
+  font-size: 1rem;
+  margin-bottom: 35px;
+}
+
+/* Animação do radar pulsante */
+.pulse-radar {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 25px auto;
+}
+.pin {
+  width: 14px;
+  height: 14px;
+  background: #ff2d55;
+  border-radius: 50%;
+  position: absolute;
+  top: 23px;
+  left: 23px;
+  z-index: 5;
+}
+.pulse {
+  width: 60px;
+  height: 60px;
+  border: 2px solid #ff2d55;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: radarBounce 2s ease-out infinite;
+  opacity: 0;
+}
+@keyframes radarBounce {
+  0% { transform: scale(0.2); opacity: 0; }
+  50% { opacity: 0.5; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+.btn-abrir-ar {
+  background: #ff2d55;
+  color: white;
+  border: none;
+  padding: 16px 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border-radius: 12px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s, transform 0.2s;
+}
+.btn-abrir-ar:hover {
+  background: #ff0033;
+  transform: scale(1.02);
+}
+
+
+/* --- COMPONENTES PADRÕES REAPROVEITADOS --- */
 .timer {
   color: white;
   font-size: 3rem;
@@ -249,7 +436,6 @@ body {
   overflow: visible;
 }
 
-
 .heart-icon {
   position: relative;
   z-index: 1;
@@ -284,6 +470,7 @@ body {
   background: #111;
   color: white;
   font-size: 16px;
+  text-align: center;
 }
 .heart-glow {
   fill: #ff2d55;
@@ -294,44 +481,6 @@ body {
   0%   { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
   50%  { opacity: 0.55; transform: scale(1.22) translate(-18px, -14px); }
   100% { opacity: 0.2; transform: scale(1.10) translate(-9px, -8px); }
-}
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.85); 
-  backdrop-filter: blur(5px); 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000; 
-}
-
-.modal-content {
-  background: #111;
-  padding: 40px;
-  border-radius: 16px;
-  text-align: center;
-  max-width: 90%;
-  width: 400px;
-  border: 1px solid #333;
-  box-shadow: 0 8px 32px rgba(255, 45, 85, 0.2); 
-}
-
-.modal-content h2 {
-  color: white;
-  margin-bottom: 15px;
-  font-family: sans-serif;
-  font-size: 1.5rem;
-}
-
-.modal-content p {
-  color: #aaa;
-  margin-bottom: 30px;
-  font-family: sans-serif;
-  line-height: 1.4;
 }
 
 .btn-vamos-la {
@@ -344,10 +493,11 @@ body {
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s ease, background 0.2s ease;
+  width: 100%;
 }
 
 .btn-vamos-la:hover {
   background: #ff0033;
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 </style>
