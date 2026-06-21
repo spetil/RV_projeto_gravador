@@ -112,8 +112,9 @@
 import { ref } from 'vue'
 import { Mic, Square } from 'lucide-vue-next'
 import { createClient } from '@supabase/supabase-js'
-import PracaComponente from './praca.vue' // <--- IMPORTANDO SEU COMPONENTE DA PRAÇA AQUI!
+import PracaComponente from '../views/praca.vue'
 
+  
 const supabaseUrl = 'https://ppsdcoifaifrfgzovwwu.supabase.co'
 const supabaseKey = 'sb_publishable_I1kgINGoMJ6h5UYt-q2Kyw_j7-ZP-Wv'
 const supabase = createClient(supabaseUrl, supabaseKey)
